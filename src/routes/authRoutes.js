@@ -5,7 +5,7 @@ const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Route to regisdter new user
-router.get('/register', authController.registerUser);
+router.get('/signup', authController.registerUser);
 
 // Route to login user
 router.post('/login', authController.loginUser);
