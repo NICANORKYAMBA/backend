@@ -37,14 +37,8 @@ app.use(express.json());
 // Set up CORS middleware
 app.use(cors());
 
-// Frontend URL route
-app.get('/auth-success', (req, res) => {
-    res.send('You have successfully logged in. You may close this window.\n');
-});
-
 // Set up routes
 app.use('/api/auth', require('./routes/authRoutes'));
-//app.use('/api/users', require('./controllers/userController'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
 
 // Start server

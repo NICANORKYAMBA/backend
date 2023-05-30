@@ -4,7 +4,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Route to regisdter new user
+// Route to register new user
 router.get('/signup', authController.registerUser);
 
 // Route to login user
