@@ -4,25 +4,25 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Route to register new user
-router.get('/signup', authController.registerUser);
+// Route to register a new user
+router.post('/signup', authController.registerUser);
 
-// Route to login user
+// Route to log in a user
 router.post('/login', authController.loginUser);
 
-// Route to logout user
+// Route to log out a user
 router.get('/logout', authMiddleware, authController.logoutUser);
 
-// Route to signup with google
+// Route to sign up with Google
 router.get('/google/signup', authController.googleSignup);
 
-// Route to login with google
+// Route to log in with Google
 router.get('/google/login', authController.googleLogin);
 
-// Route to google signup callback
+// Route for Google sign up callback
 router.get('/google/signup/callback', authController.googleSignupCallback);
 
-// Route to google login callback
+// Route for Google log in callback
 router.get('/google/login/callback', authController.googleLoginCallback);
 
 module.exports = router;

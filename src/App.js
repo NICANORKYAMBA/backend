@@ -1,10 +1,11 @@
-const { MONGODB_URI, SESSION_SECRET, PORT } = require('./config/config');
+require('dotenv').config();
+
+const { MONGODB_URI, SESSION_SECRET, PORT } = process.env;
 const connectDB = require('./config/db');
 const express = require('express');
 const passport = require('passport');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 
 // Passport config
@@ -33,6 +34,7 @@ app.use(passport.session());
 
 // Set up body parser middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 // Set up CORS middleware
 app.use(cors());
@@ -40,6 +42,7 @@ app.use(cors());
 // Set up routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 // Start server
 const port = PORT || 8000;
