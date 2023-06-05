@@ -7,6 +7,7 @@ const passport = require('passport');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const cors = require('cors');
+const User = require('./models/User');
 
 // Passport config
 require('./config/passport');

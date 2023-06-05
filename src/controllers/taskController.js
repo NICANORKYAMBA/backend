@@ -7,8 +7,10 @@ const router = express.Router();
 // Get all tasks
 const getAllTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ user: req.user._id });
-    const tasksWithTimezone = tasks.map(task => {
+    const userId = req.params.userId;
+
+    const tasks = await Task.find({ user: userId });
+    const tasksWithTimezone = tasks.map((task) => {
       const { dueDate, createdAt, updatedAt, completedDate } = task;
       return {
         ...task._doc,

@@ -8,7 +8,7 @@ exports.registerUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: { $regex: new RegExp(email, "i") } });
     if (existingUser) {
       return res.status(400).json({ message: "Email already registered" });
     }
@@ -26,7 +26,7 @@ exports.registerUser = async (req, res) => {
 
     return res
       .status(201)
-      .json({ message: "User registered successfully", user: savedUser });
+      .json({ message: "User registered successfully", user: savedUser, userId: savedUser._id });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal server error" });
@@ -54,7 +54,7 @@ exports.loginUser = async (req, res) => {
 
       const message = `Welcome back, ${user.email}! You have successfully logged in.`;
 
-      return res.json({ message, token });
+      return res.json({ message, token, userId: user._id });
     })(req, res);
   } catch (error) {
     console.error(error);
@@ -64,8 +64,12 @@ exports.loginUser = async (req, res) => {
 
 // Logout a user
 exports.logoutUser = (req, res) => {
-  req.logout();
-  return res.json({ message: "User logged out successfully" });
+  if (req.isAuthenticated()) {
+    req.logout();
+    return res.json({ message: "User logged out successfully" });
+  } else {
+    return res.status(401).json({ message: "User not logged in" });
+  }
 };
 
 // Google OAuth signup

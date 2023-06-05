@@ -11,7 +11,7 @@ router.post('/signup', authController.registerUser);
 router.post('/login', authController.loginUser);
 
 // Route to log out a user
-router.get('/logout', authMiddleware, authController.logoutUser);
+router.post('/logout', authController.logoutUser);
 
 // Route to sign up with Google
 router.get('/google/signup', authController.googleSignup);
