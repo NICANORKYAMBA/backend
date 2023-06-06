@@ -1,35 +1,32 @@
 const User = require('../models/User');
 const Task = require('../models/Task');
 
-// Get all users
-exports.getAllUsers = async (req, res) => {
+exports.getAllUsersTasks = async (req, res) => {
   try {
-    const users = await User.find({});
+    const users = await User.find({}).lean();
+    const userIds = users.map(user => user._id);
 
-    const usersWithTasks = await Promise.all(
-      users.map(async (user) => {
-        const tasks = await Task.find({ userId: user._id });
+    const tasks = await Task.find({ user: { $in: userIds } }).lean();
 
-        return {
-          _id: user._id,
-          email: user.email,
-          tasks: tasks,
-        };
-      })
-    );
+    const usersWithTasks = users.map(user => ({
+      _id: user._id,
+      email: user.email,
+      tasks: tasks.filter(task => task.user.toString() === user._id.toString())
+    }));
 
     res.json(usersWithTasks);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: 'Error retrieving users with tasks', error: error.message });
   }
 };
-
 
 // Get a single user by ID
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const userId = req.params.id;
+
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -53,9 +50,10 @@ exports.getUserById = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const userId = req.params.id;
 
     const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
+      userId,
       { email, password },
       { new: true }
     );
@@ -74,7 +72,9 @@ exports.updateUser = async (req, res) => {
 // Delete a user
 exports.deleteUser = async (req, res) => {
   try {
-    const deletedUser = await User.findByIdAndDelete(req.params.id);
+    const userId = req.params.id;
+
+    const deletedUser = await User.findByIdAndDelete(userId);
 
     if (!deletedUser) {
       return res.status(404).json({ message: 'User not found' });

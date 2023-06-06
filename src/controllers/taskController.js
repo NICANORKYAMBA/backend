@@ -44,7 +44,7 @@ const createTask = async (req, res) => {
       importance,
       completedDate: null,
       completed: false,
-      user: req.user._id,
+      userId: req.user._id,
     });
     await newTask.save();
     res.status(201).json({ message: 'Task created successfully' });

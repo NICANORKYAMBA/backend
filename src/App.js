@@ -20,13 +20,13 @@ connectDB();
 
 // Set up session middleware
 app.use(session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: new MongoStore({
-        mongoUrl: MONGODB_URI,
-        collectionName: 'sessions',
-    }),
+	secret: SESSION_SECRET,
+	resave: false,
+	saveUninitialized: false,
+	store: new MongoStore({
+		mongoUrl: MONGODB_URI,
+		collectionName: 'sessions',
+	}),
 }));
 
 // Set up passport middleware

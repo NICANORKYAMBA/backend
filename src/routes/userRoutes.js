@@ -5,7 +5,7 @@ const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Route to fetch all users
-router.get('/', userController.getAllUsers);
+router.get('/', userController.getAllUsersTasks);
 
 // Route to fetch a single user by ID
 router.get('/:id', userController.getUserById);
