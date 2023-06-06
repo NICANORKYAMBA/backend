@@ -34,17 +34,25 @@ exports.registerUser = async (req, res) => {
 };
 
 // Login a user
-exports.loginUser = async (req, res) => {
-  try {
-    passport.authenticate("local", { session: false }, (error, user, info) => {
-      if (error) {
-        console.error(error);
+exports.loginUser = (req, res, next) => {
+  passport.authenticate("local", (err, user, info) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+
+    if (!user) {
+      return res.status(401).json({ message: info.message });
+    }
+
+    req.login(user, (err) => {
+      if (err) {
+        console.error(err);
         return res.status(500).json({ message: "Internal server error" });
       }
 
-      if (!user) {
-        return res.status(401).json({ message: info.message });
-      }
+      console.log('Session ID:', req.sessionID);
+      console.log('Session data:', req.session);
 
       const token = jwt.sign(
         { userId: user._id, email: user.email },
@@ -55,18 +63,27 @@ exports.loginUser = async (req, res) => {
       const message = `Welcome back, ${user.email}! You have successfully logged in.`;
 
       return res.json({ message, token, userId: user._id });
-    })(req, res);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
+    });
+  })(req, res, next);
 };
 
 // Logout a user
 exports.logoutUser = (req, res) => {
+  console.log('Before Logout - Session ID:', req.sessionID);
+  console.log('Before Logout - Session data:', req.session);
+
   if (req.isAuthenticated()) {
-    req.logout();
-    return res.json({ message: "User logged out successfully" });
+    req.logout(); // Remove user's login session
+    req.session.destroy((err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+
+      console.log('After Logout - Session ID:', req.sessionID);
+      console.log('After Logout - Session data:', req.session);
+      return res.json({ message: "User logged out successfully" });
+    });
   } else {
     return res.status(401).json({ message: "User not logged in" });
   }

@@ -7,17 +7,19 @@ const router = express.Router();
 // Get all tasks
 const getAllTasks = async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const { userId } = req.params;
 
     const tasks = await Task.find({ user: userId });
     const tasksWithTimezone = tasks.map((task) => {
       const { dueDate, createdAt, updatedAt, completedDate } = task;
+      const formatDateTime = (dateTime) =>
+        moment(dateTime).tz(req.user.timezone).format('YYYY-MM-DD HH:mm:ss');
       return {
         ...task._doc,
-        dueDate: dueDate ? moment(dueDate).tz(req.user.timezone).format('YYYY-MM-DD HH:mm:ss') : null,
-        createdAt: moment(createdAt).tz(req.user.timezone).format('YYYY-MM-DD HH:mm:ss'),
-        updatedAt: moment(updatedAt).tz(req.user.timezone).format('YYYY-MM-DD HH:mm:ss'),
-        completedDate: completedDate ? moment(completedDate).tz(req.user.timezone).format('YYYY-MM-DD HH:mm:ss') : null,
+        dueDate: dueDate ? formatDateTime(dueDate) : null,
+        createdAt: formatDateTime(createdAt),
+        updatedAt: formatDateTime(updatedAt),
+        completedDate: completedDate ? formatDateTime(completedDate) : null,
       };
     });
     res.json(tasksWithTimezone);
@@ -137,17 +139,14 @@ const getTaskById = async (req, res) => {
     }
 
     const { dueDate, createdAt, updatedAt, completedDate } = task;
-    const localDueDate = dueDate ? moment.tz(dueDate, req.user.timezone).format('YYYY-MM-DD HH:mm:ss') : null;
-    const localCreatedAt = moment.tz(createdAt, req.user.timezone).format('YYYY-MM-DD HH:mm:ss');
-    const localUpdatedAt = moment.tz(updatedAt, req.user.timezone).format('YYYY-MM-DD HH:mm:ss');
-    const localCompletedDate = completedDate ? moment.tz(completedDate, req.user.timezone).format('YYYY-MM-DD HH:mm:ss') : null;
+    const formatDateTime = (dateTime) => moment(dateTime, req.user.timezone).format('YYYY-MM-DD HH:mm:ss');
 
     const taskWithTimezone = {
       ...task._doc,
-      dueDate: localDueDate,
-      createdAt: localCreatedAt,
-      updatedAt: localUpdatedAt,
-      completedDate: localCompletedDate,
+      dueDate: dueDate ? formatDateTime(dueDate) : null,
+      createdAt: formatDateTime(createdAt),
+      updatedAt: formatDateTime(updatedAt),
+      completedDate: completedDate ? formatDateTime(completedDate) : null,
     };
     res.json(taskWithTimezone);
   } catch (err) {
@@ -180,8 +179,8 @@ const deleteTask = async (req, res) => {
 // Get tasks sorted by a specific field
 const getTasksSortedByField = async (req, res) => {
   try {
-    const sortField = req.params.field;
-    const tasks = await Task.find({ user: req.user._id }).sort({ [sortField]: 1 });
+    const { field } = req.params;
+    const tasks = await Task.find({ user: req.user._id }).sort({ [field]: 1 });
     res.json(tasks);
   } catch (err) {
     console.error(err);
