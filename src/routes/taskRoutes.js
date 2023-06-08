@@ -27,4 +27,18 @@ router.delete(
   taskController.deleteTask
 );
 
+// Route to extend due date of a task
+router.put(
+  "/extend-due-date/:id",
+  authMiddleware,
+  taskController.extendDueDate
+);
+
+// Route to sort tasks by different fields
+router.get(
+  "/sort/:field",
+  authMiddleware,
+  taskController.getTasksSortedByField
+);
+
 module.exports = router;

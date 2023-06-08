@@ -92,8 +92,6 @@ const getTaskById = async (req, res) => {
 const updateTask = async (req, res) => {
   try {
     const { title, description, dueDate, importance, completed } = req.body;
-    const taskId = req.params.taskId;
-    const task = await Task.findOne({ _id: taskId, userId: req.user._id });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
@@ -179,4 +177,68 @@ const deleteTask = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: "Internal Server error" });
   }
+};
+
+// Extend due date of a task by the specified number of days
+const extendDueDate = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    if (task.userId.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    if (task.completed) {
+      return res.status(400).json({ message: "Task is already completed" });
+    }
+
+    if (task.dueDate < task.originalDueDate) {
+      return res
+        .status(400)
+        .json({ message: "Due date cannot be before the original due date" });
+    }
+
+    const { days } = req.body;
+    const utcDueDate = moment
+      .utc(task.dueDate)
+      .add(days, "days")
+      .format("YYYY-MM-DD HH:mm:ss");
+
+    task.dueDate = utcDueDate;
+    task.updatedAt = new Date();
+
+    await task.save();
+    res.json({ message: "Due date extended successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server error" });
+  }
+};
+
+// Get tasks sorted by a specific field
+const getTasksSortedByField = async (req, res) => {
+  try {
+    const { field } = req.params;
+    const tasks = await Task.find({ userId: req.user._id }).sort({
+      [field]: 1,
+    });
+    res.json(tasks);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server error" });
+  }
+};
+
+module.exports = {
+  getAllTasks,
+  createTask,
+  updateTask,
+  getTaskById,
+  deleteTask,
+  extendDueDate,
+  getTasksSortedByField,
 };
