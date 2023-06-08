@@ -11,26 +11,20 @@ router.get("/:userId", taskController.getAllTasks);
 router.post("/", authMiddleware, taskController.createTask);
 
 // Route to get a task by id
-router.get("/:id", authMiddleware, taskController.getTaskById);
+router.get("/:userId/:taskId", authMiddleware, taskController.getTaskById);
 
 // Route to update a task by id
-router.put("/:id", authMiddleware, taskController.updateTask);
-
-// Route to delete a task by id
-router.delete("/:id", authMiddleware, taskController.deleteTask);
-
-// Route to extend due date of a task
 router.put(
-  "/extend-due-date/:id",
+  "/update/:userId/:taskId",
   authMiddleware,
-  taskController.extendDueDate
+  taskController.updateTask
 );
 
-// Route to sort tasks by different fields
-router.get(
-  "/sort/:field",
+// Route to delete a task by id
+router.delete(
+  "/delete/:userId/:taskId",
   authMiddleware,
-  taskController.getTasksSortedByField
+  taskController.deleteTask
 );
 
 module.exports = router;

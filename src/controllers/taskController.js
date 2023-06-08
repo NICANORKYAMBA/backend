@@ -8,7 +8,6 @@ const router = express.Router();
 const getAllTasks = async (req, res) => {
   try {
     const { userId } = req.params;
-
     const tasks = await Task.find({ userId: userId });
     res.json(tasks);
   } catch (err) {
@@ -30,13 +29,14 @@ const createTask = async (req, res) => {
       description,
       createdAt: new Date(),
       updatedAt: new Date(),
-      dueDate: dueDate ? utcDueDate : null,
-      originalDueDate: dueDate ? utcDueDate : null,
+      dueDate: utcDueDate ? utcDueDate : null,
+      originalDueDate: utcDueDate ? utcDueDate : null,
       importance,
       completedDate: null,
       completed: false,
       userId: req.user._id,
     });
+
     await newTask.save();
     res.status(201).json({ message: "Task created successfully" });
   } catch (err) {
@@ -45,112 +45,116 @@ const createTask = async (req, res) => {
   }
 };
 
-// Update a task
+// Get task by Id
+const getTaskById = async (req, res) => {
+  try {
+    const taskId = req.params.taskId;
+    const task = await Task.findOne({ _id: taskId, userId: req.user._id });
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    const {
+      _id,
+      title,
+      description,
+      createdAt,
+      updatedAt,
+      dueDate,
+      originalDueDate,
+      importance,
+      completed,
+      completedDate,
+    } = task;
+
+    const taskWithTimezone = {
+      _id,
+      title,
+      description,
+      createdAt,
+      updatedAt,
+      dueDate,
+      originalDueDate,
+      importance,
+      completed,
+      completedDate,
+    };
+
+    res.json(taskWithTimezone);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server error" });
+  }
+};
+
+// Update Task
 const updateTask = async (req, res) => {
   try {
     const { title, description, dueDate, importance, completed } = req.body;
-    const task = await Task.findById(req.params.id);
+    const taskId = req.params.taskId;
+    const task = await Task.findOne({ _id: taskId, userId: req.user._id });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
 
-    if (task.user.toString() !== req.user._id.toString()) {
+    if (task.userId.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
-    const utcDueDate = moment
-      .tz(dueDate, req.user.timezone)
-      .utc()
-      .format("YYYY-MM-DD HH:mm:ss");
-
-    if (utcDueDate < task.originalDueDate) {
-      return res
-        .status(400)
-        .json({ message: "Due date cannot be before the original due date" });
+    // Check if any changes were made to the task
+    if (
+      !title &&
+      !description &&
+      !dueDate &&
+      !importance &&
+      completed === undefined
+    ) {
+      return res.json({ message: "No changes made to the task" });
     }
 
-    task.title = title;
-    task.description = description;
-    task.updatedAt = new Date();
-    task.dueDate = dueDate ? utcDueDate : null;
-    task.importance = importance;
-    task.completed = completed;
-    task.completedDate = completed ? new Date() : null;
-
-    await task.save();
-    res.json({ message: "Task updated successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Internal Server error" });
-  }
-};
-
-// Extend due date of a task by the specified number of days
-const extendDueDate = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id);
-
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+    // Update task properties if provided
+    if (title) {
+      task.title = title;
     }
 
-    if (task.user.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: "Not authorized" });
+    if (description) {
+      task.description = description;
     }
 
-    if (task.completed) {
-      return res.status(400).json({ message: "Task is already completed" });
+    if (dueDate) {
+      const utcDueDate = moment
+        .tz(dueDate, req.user.timezone)
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss");
+
+      if (!moment(utcDueDate, "YYYY-MM-DD HH:mm:ss", true).isValid()) {
+        return res.status(400).json({ message: "Invalid due date format" });
+      }
+
+      if (utcDueDate < task.originalDueDate) {
+        return res
+          .status(400)
+          .json({ message: "Due date cannot be before the original due date" });
+      }
+
+      task.dueDate = utcDueDate;
     }
 
-    if (task.dueDate < task.originalDueDate) {
-      return res
-        .status(400)
-        .json({ message: "Due date cannot be before the original due date" });
+    if (importance) {
+      task.importance = importance;
     }
 
-    const { days } = req.body;
-    const utcDueDate = moment
-      .utc(task.dueDate)
-      .add(days, "days")
-      .format("YYYY-MM-DD HH:mm:ss");
+    if (completed !== undefined) {
+      task.completed = completed;
+      task.completedDate = completed ? new Date() : null;
+    }
 
-    task.dueDate = utcDueDate;
     task.updatedAt = new Date();
 
     await task.save();
-    res.json({ message: "Due date extended successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Internal Server error" });
-  }
-};
-
-// Get a specific task
-const getTaskById = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id);
-
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
-
-    if (task.user.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
-
-    const { dueDate, createdAt, updatedAt, completedDate } = task;
-    const formatDateTime = (dateTime) =>
-      moment(dateTime, req.user.timezone).format("YYYY-MM-DD HH:mm:ss");
-
-    const taskWithTimezone = {
-      ...task._doc,
-      dueDate: dueDate ? formatDateTime(dueDate) : null,
-      createdAt: formatDateTime(createdAt),
-      updatedAt: formatDateTime(updatedAt),
-      completedDate: completedDate ? formatDateTime(completedDate) : null,
-    };
-    res.json(taskWithTimezone);
+    res.json({ message: "Task updated successfully", task });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal Server error" });
@@ -160,42 +164,19 @@ const getTaskById = async (req, res) => {
 // Delete a task
 const deleteTask = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const userId = req.user._id;
+    const taskId = req.params.taskId;
+
+    const task = await Task.findOneAndDelete({ _id: taskId, userId: userId });
+    console.log(task);
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
 
-    if (task.user.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
-
-    await task.remove();
     res.json({ message: "Task deleted successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal Server error" });
   }
-};
-
-// Get tasks sorted by a specific field
-const getTasksSortedByField = async (req, res) => {
-  try {
-    const { field } = req.params;
-    const tasks = await Task.find({ user: req.user._id }).sort({ [field]: 1 });
-    res.json(tasks);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Internal Server error" });
-  }
-};
-
-module.exports = {
-  getAllTasks,
-  createTask,
-  updateTask,
-  getTaskById,
-  deleteTask,
-  extendDueDate,
-  getTasksSortedByField,
 };

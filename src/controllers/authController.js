@@ -26,13 +26,17 @@ exports.registerUser = async (req, res) => {
 
 		console.log("User created successfully!");
 
-		return res
-			.status(201)
-			.json({
-				message: "User registered successfully",
-				user: savedUser,
-				userId: savedUser._id,
-			});
+		const token = jwt.sign(
+			{ userId: savedUser._id, email: savedUser.email },
+			process.env.SESSION_SECRET,
+			{ expiresIn: "1h" }
+		);
+
+		return res.status(201).json({
+			message: "User registered successfully",
+			token,
+			userId: savedUser._id,
+		});
 	} catch (error) {
 		console.error(error);
 		return res.status(500).json({ message: "Internal server error" });
