@@ -92,12 +92,17 @@ const getTaskById = async (req, res) => {
 const updateTask = async (req, res) => {
   try {
     const { title, description, dueDate, importance, completed } = req.body;
+    const taskId = req.params.taskId;
+    const userId = req.user._id;
+
+    // Retrieve the task from the database
+	  const task = await Task.findOne({ _id: taskId, userId: userId });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
 
-    if (task.userId.toString() !== req.user._id.toString()) {
+    if (task.userId.toString() !== userId.toString()) {
       return res.status(401).json({ message: "Not authorized" });
     }
 
