@@ -52,9 +52,19 @@ exports.updateUser = async (req, res) => {
     const { email, password } = req.body;
     const userId = req.params.id;
 
+    // Validate input data
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    // Update user fields
+    const updatedFields = { email, password };
+    // Add more fields to update if needed (e.g., name, profile picture)
+
+    // Find and update user
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { email, password },
+      updatedFields,
       { new: true }
     );
 
@@ -62,7 +72,9 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ message: 'User updated successfully', user: updatedUser });
+    // Return updated user fields
+    const { _id, email: updatedEmail } = updatedUser;
+    res.json({ message: 'User updated successfully', user: { _id, email: updatedEmail } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });

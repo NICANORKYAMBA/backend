@@ -76,20 +76,25 @@ exports.loginUser = (req, res, next) => {
 
 // Logout a user
 exports.logoutUser = (req, res) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "User not logged in" });
+  }
 
-	if (!req.isAuthenticated()) {
-		return res.status(401).json({ message: "User not logged in" });
-	}
+  req.logout((err) => {
+    if (err) {
+      console.error("Error during logout:", err);
+      return res.status(500).json({ message: "Failed to log out user" });
+    }
 
-	req.logout();
-	req.session.destroy((err) => {
-		if (err) {
-			console.error(err);
-			return res.status(500).json({ message: "Internal server error" });
-		}
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Error destroying session:", err);
+        return res.status(500).json({ message: "Failed to log out user" });
+      }
 
-		return res.json({ message: "User logged out successfully" });
-	});
+      return res.json({ message: "User logged out successfully" });
+    });
+  });
 };
 
 // Google OAuth signup
