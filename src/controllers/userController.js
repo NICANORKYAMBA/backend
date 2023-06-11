@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const Task = require('../models/Task');
 
@@ -57,8 +58,11 @@ exports.updateUser = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Update user fields
-    const updatedFields = { email, password };
+    const updatedFields = { email, password: hashedPassword };
     // Add more fields to update if needed (e.g., name, profile picture)
 
     // Find and update user

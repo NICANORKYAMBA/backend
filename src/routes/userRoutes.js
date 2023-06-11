@@ -11,9 +11,9 @@ router.get('/', userController.getAllUsersTasks);
 router.get('/:id', userController.getUserById);
 
 // Route to update a user
-router.put('/:id', authMiddleware, userController.updateUser);
+router.put('/update/:id', authMiddleware, userController.updateUser);
 
 // Route to delete a user
-router.delete('/:id', authMiddleware, userController.deleteUser);
+router.delete('/delete/:id', authMiddleware, userController.deleteUser);
 
 module.exports = router;
