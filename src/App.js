@@ -19,15 +19,17 @@ const app = express();
 connectDB();
 
 // Set up session middleware
-app.use(session({
-	secret: SESSION_SECRET,
-	resave: false,
-	saveUninitialized: false,
-	store: new MongoStore({
-		mongoUrl: MONGODB_URI,
-		collectionName: 'sessions',
-	}),
-}));
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: MONGODB_URI,
+      collectionName: 'sessions',
+    }),
+  })
+);
 
 // Set up passport middleware
 app.use(passport.initialize());
@@ -38,7 +40,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Set up CORS middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: 'https://taskifypro.vercel.app',
+    credentials: true,
+  })
+);
+
+// Enable CORS for preflight requests
+app.options('*', cors());
 
 // Set up routes
 app.use('/api/auth', require('./routes/authRoutes'));
